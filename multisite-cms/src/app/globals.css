@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Tiptap Editor Styles */
+.tiptap {
+  @apply outline-none min-h-[200px];
+}
+
+.tiptap p {
+  @apply my-2;
+}
+
+.tiptap h1 {
+  @apply text-3xl font-bold my-4;
+}
+
+.tiptap h2 {
+  @apply text-2xl font-semibold my-3;
+}
+
+.tiptap h3 {
+  @apply text-xl font-medium my-2;
+}
+
+.tiptap ul {
+  @apply list-disc ml-6 my-2;
+}
+
+.tiptap ol {
+  @apply list-decimal ml-6 my-2;
+}
+
+.tiptap blockquote {
+  @apply border-l-4 border-gray-300 pl-4 italic my-4;
+}
+
+.tiptap code {
+  @apply bg-gray-100 rounded px-1 py-0.5 text-sm;
+}
+
+.tiptap pre {
+  @apply bg-gray-900 text-gray-100 rounded p-4 my-4 overflow-x-auto;
+}
+
+.tiptap a {
+  @apply text-primary underline;
+}
+
+.tiptap img {
+  @apply max-w-full h-auto rounded my-4;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground pointer-events-none float-left h-0;
+  content: attr(data-placeholder);
+}

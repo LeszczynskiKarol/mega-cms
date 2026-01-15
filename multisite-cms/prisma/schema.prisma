@@ -1,0 +1,140 @@
+// =============================================================================
+// Prisma Schema - Multi-tenant CMS (SQLite version)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// TENANTS (Klienci)
+// =============================================================================
+
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  domain      String   @unique
+  domains     String   @default("[]")  // JSON string zamiast tablicy
+  apiKey      String   @unique @default(cuid())
+  settings    String   @default("{}")  // JSON string
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  users       User[]
+  pages       Page[]
+  media       Media[]
+  deployments Deployment[]
+}
+
+// =============================================================================
+// USERS
+// =============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  role          String    @default("EDITOR")  // SUPER_ADMIN, ADMIN, EDITOR, VIEWER
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  pages         Page[]    @relation("PageAuthor")
+  sessions      Session[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  createdAt    DateTime @default(now())
+}
+
+// =============================================================================
+// PAGES
+// =============================================================================
+
+model Page {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug        String
+  title       String
+  description String?
+  content     String    @default("{}")  // JSON string
+  seo         String    @default("{}")  // JSON string
+  status      String    @default("DRAFT")  // DRAFT, PUBLISHED, ARCHIVED
+  publishedAt DateTime?
+  authorId    String?
+  author      User?     @relation("PageAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  order       Int       @default(0)
+  parentId    String?
+  parent      Page?     @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Page[]    @relation("PageHierarchy")
+  template    String    @default("default")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, slug])
+}
+
+// =============================================================================
+// MEDIA
+// =============================================================================
+
+model Media {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  width        Int?
+  height       Int?
+  alt          String?
+  createdAt    DateTime @default(now())
+}
+
+// =============================================================================
+// DEPLOYMENTS
+// =============================================================================
+
+model Deployment {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status      String    @default("PENDING")  // PENDING, BUILDING, DEPLOYING, SUCCESS, FAILED
+  triggeredBy String?
+  buildLog    String?
+  duration    Int?
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+}
+
+// =============================================================================
+// GLOBAL SETTINGS
+// =============================================================================
+
+model GlobalSettings {
+  id                   String   @id @default("global")
+  awsRegion            String   @default("eu-central-1")
+  s3Bucket             String?
+  cfDistributionId     String?
+  buildWebhookSecret   String?
+  updatedAt            DateTime @updatedAt
+}

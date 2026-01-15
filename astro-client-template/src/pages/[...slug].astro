@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAllPages, getPageBySlug } from '../lib/cms';
+
+export async function getStaticPaths() {
+  const pages = await getAllPages();
+  
+  return pages
+    .filter(page => page.slug !== 'index') // index ma własną stronę
+    .map(page => ({
+      params: { slug: page.slug },
+      props: { page },
+    }));
+}
+
+interface Props {
+  page: {
+    title: string;
+    description: string | null;
+    content: { html: string };
+    template: string;
+  };
+}
+
+const { page } = Astro.props;
+
+// Fallback - pobierz z API jeśli nie ma w props
+const pageData = page || await getPageBySlug(Astro.params.slug);
+
+if (!pageData) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout title={pageData.title} description={pageData.description || ''}>
+  <div class="container">
+    <div class="page-content">
+      <h1>{pageData.title}</h1>
+      <div set:html={pageData.content.html} />
+    </div>
+  </div>
+</BaseLayout>

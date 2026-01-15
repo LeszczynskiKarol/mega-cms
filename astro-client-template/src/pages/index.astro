@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPageBySlug, getTenantSettings } from '../lib/cms';
+
+const page = await getPageBySlug('index');
+const tenant = await getTenantSettings();
+
+if (!page) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout title={page.title} description={page.description || ''}>
+  <div class="hero">
+    <div class="container">
+      <h1>{tenant?.name || 'Witamy'}</h1>
+      <p>{tenant?.settings?.description || ''}</p>
+    </div>
+  </div>
+  
+  <div class="container">
+    <div class="page-content" set:html={page.content.html} />
+  </div>
+</BaseLayout>

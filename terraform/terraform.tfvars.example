@@ -1,0 +1,94 @@
+# =============================================================================
+# terraform.tfvars - Konfiguracja produkcyjna
+# =============================================================================
+# Skopiuj ten plik i dostosuj do swoich potrzeb.
+# NIE COMMITUJ pliku z wrażliwymi danymi do repozytorium!
+# =============================================================================
+
+# Region AWS (Frankfurt - najbliżej Polski)
+aws_region = "eu-central-1"
+
+# Środowisko
+environment = "prod"
+
+# Nazwa projektu (używana w nazwach zasobów)
+project_name = "kl-sites"  # zmień na swoją
+
+# =============================================================================
+# DOMENY KLIENTÓW
+# =============================================================================
+# Dodawaj tutaj nowych klientów. Każdy klient to osobny wpis.
+# Po dodaniu uruchom: terraform plan && terraform apply
+# =============================================================================
+
+client_domains = {
+  
+  # ----- PRZYKŁAD: Demo strona -----
+  demo = {
+    domain         = "demo.twojadomena.pl"
+    aliases        = []
+    enabled        = true
+    index_document = "index.html"
+    error_document = "404.html"
+  }
+  
+  # ----- KLIENT 1 -----
+  # klient-a = {
+  #   domain         = "klient-a.pl"
+  #   aliases        = ["www.klient-a.pl"]
+  #   enabled        = true
+  #   index_document = "index.html"
+  #   error_document = "404.html"
+  # }
+  
+  # ----- KLIENT 2 -----
+  # firma-xyz = {
+  #   domain         = "firma-xyz.com"
+  #   aliases        = ["www.firma-xyz.com", "firmaxyz.pl"]
+  #   enabled        = true
+  #   index_document = "index.html"
+  #   error_document = "404.html"
+  # }
+  
+  # ----- KLIENT 3 (tymczasowo wyłączony) -----
+  # stary-klient = {
+  #   domain         = "stary-klient.pl"
+  #   aliases        = []
+  #   enabled        = false  # wyłączony
+  #   index_document = "index.html"
+  #   error_document = "404.html"
+  # }
+}
+
+# =============================================================================
+# USTAWIENIA CLOUDFRONT
+# =============================================================================
+
+# Klasa cenowa (PriceClass_100 = najtaniej, tylko EU + NA)
+cloudfront_price_class = "PriceClass_100"
+
+# Cache TTL (sekundy)
+cloudfront_default_ttl = 86400    # 24h
+cloudfront_max_ttl     = 604800   # 7 dni
+
+# =============================================================================
+# CERTYFIKAT SSL
+# =============================================================================
+
+# Zostaw puste, żeby Terraform utworzył nowy certyfikat
+acm_certificate_arn = ""
+create_certificate  = true
+
+# Lub podaj ARN istniejącego certyfikatu:
+# acm_certificate_arn = "arn:aws:acm:us-east-1:123456789:certificate/xxxxx"
+# create_certificate  = false
+
+# =============================================================================
+# S3
+# =============================================================================
+
+# Nazwa bucketa (zostaw puste dla automatycznej nazwy)
+sites_bucket_name = ""
+
+# OSTROŻNIE: Ustaw na true tylko w dev!
+force_destroy_bucket = false

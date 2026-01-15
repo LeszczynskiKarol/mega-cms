@@ -1,0 +1,52 @@
+# =============================================================================
+# Docker Compose - Local Development
+# =============================================================================
+# Uruchamia CMS + PostgreSQL lokalnie
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: multisite-db
+    environment:
+      POSTGRES_USER: multisite
+      POSTGRES_PASSWORD: localdev123
+      POSTGRES_DB: multisite_cms
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U multisite -d multisite_cms"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # CMS (Next.js)
+  cms:
+    build:
+      context: ./multisite-cms
+      dockerfile: Dockerfile.dev
+    container_name: multisite-cms
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://multisite:localdev123@postgres:5432/multisite_cms?schema=public
+      JWT_SECRET: local-dev-secret-change-in-production
+      ADMIN_EMAIL: admin@localhost
+      ADMIN_PASSWORD: admin123
+      NODE_ENV: development
+    volumes:
+      - ./multisite-cms:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma db push && npm run db:seed && npm run dev"
+
+volumes:
+  postgres_data:
