@@ -15,7 +15,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let tenants;
+    let tenants: Awaited<ReturnType<typeof prisma.tenant.findMany>>;
 
     if (isSuperAdmin(session)) {
       tenants = await prisma.tenant.findMany({

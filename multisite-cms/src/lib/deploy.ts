@@ -59,9 +59,10 @@ export async function triggerDeploy(
       },
     });
 
-    // Przekaż cały tenant (z githubRepo)
+    // Przekaż dane tenanta do funkcji
     triggerGitHubActions(
-      { domain: tenant.domain, githubRepo: tenant.githubRepo },
+      tenant.domain,
+      tenant.githubRepo,
       deployment.id,
       triggeredBy
     ).catch(console.error);
@@ -78,11 +79,11 @@ export async function triggerDeploy(
  */
 async function triggerGitHubActions(
   domain: string,
+  githubRepo: string | null,
   deploymentId: string,
   triggeredBy?: string
 ): Promise<void> {
   const githubToken = process.env.GITHUB_TOKEN;
-  const githubRepo = tenant.githubRepo;
 
   console.log("GitHub config:", {
     hasToken: !!githubToken,
@@ -170,7 +171,7 @@ async function simulateDevDeploy(deploymentId: string): Promise<void> {
       finishedAt: new Date(),
       duration: 2,
       buildLog:
-        "Development mode - simulated build success.\n\nTo enable real deployments, configure:\n- GITHUB_TOKEN\n- GITHUB_REPO",
+        "Development mode - simulated build success.\n\nTo enable real deployments, configure githubRepo for this tenant.",
     },
   });
 
