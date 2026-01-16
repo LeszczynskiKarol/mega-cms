@@ -1,29 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleBuildCallback } from '@/lib/deploy';
-import { z } from 'zod';
 
 // =============================================================================
-// DEPLOY CALLBACK API
+// POST /api/deploy/callback - Callback z CI/CD (GitHub Actions)
 // =============================================================================
-// Endpoint: POST /api/deploy/callback
-// Headers: x-webhook-secret: xxxxx
-// Body: { deploymentId, status, buildLog?, duration? }
-// =============================================================================
-
-const callbackSchema = z.object({
-  deploymentId: z.string(),
-  status: z.enum(['SUCCESS', 'FAILED']),
-  buildLog: z.string().optional(),
-  duration: z.number().optional(),
-});
 
 export async function POST(request: NextRequest) {
   try {
-    // Weryfikuj secret
-    const secret = request.headers.get('x-webhook-secret');
-    const expectedSecret = process.env.BUILD_WEBHOOK_SECRET;
+    // Weryfikuj webhook secret
+    const webhookSecret = request.headers.get('X-Webhook-Secret');
+    const expectedSecret = process.env.WEBHOOK_SECRET;
     
-    if (!expectedSecret || secret !== expectedSecret) {
+    if (expectedSecret && webhookSecret !== expectedSecret) {
+      console.error('Invalid webhook secret');
       return NextResponse.json(
         { error: 'Invalid webhook secret' },
         { status: 401 }
@@ -31,21 +20,35 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json();
-    const { deploymentId, status, buildLog, duration } = callbackSchema.parse(body);
+    const { deploymentId, status, buildLog, duration } = body;
     
-    await handleBuildCallback(deploymentId, status, buildLog, duration);
-    
-    return NextResponse.json({ success: true });
-    
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (!deploymentId) {
       return NextResponse.json(
-        { error: 'Invalid request body' },
+        { error: 'deploymentId is required' },
         { status: 400 }
       );
     }
     
-    console.error('Deploy callback error:', error);
+    if (!['SUCCESS', 'FAILED'].includes(status)) {
+      return NextResponse.json(
+        { error: 'status must be SUCCESS or FAILED' },
+        { status: 400 }
+      );
+    }
+    
+    await handleBuildCallback(
+      deploymentId,
+      status as 'SUCCESS' | 'FAILED',
+      buildLog,
+      duration
+    );
+    
+    console.log(`Deployment ${deploymentId} callback received: ${status}`);
+    
+    return NextResponse.json({ success: true });
+    
+  } catch (error) {
+    console.error('Callback error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

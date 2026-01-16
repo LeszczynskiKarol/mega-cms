@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 // =============================================================================
 // PUBLIC API - Pobieranie danych dla stron Astro
@@ -12,15 +12,12 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // Pobierz API key z headera
-    const apiKey = request.headers.get('x-api-key');
-    
+    const apiKey = request.headers.get("x-api-key");
+
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Missing API key' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Missing API key" }, { status: 401 });
     }
-    
+
     // Znajdź tenant po API key
     const tenant = await prisma.tenant.findUnique({
       where: { apiKey },
@@ -32,34 +29,34 @@ export async function GET(request: NextRequest) {
         isActive: true,
       },
     });
-    
+
     if (!tenant || !tenant.isActive) {
       return NextResponse.json(
-        { error: 'Invalid API key or tenant inactive' },
+        { error: "Invalid API key or tenant inactive" },
         { status: 401 }
       );
     }
-    
+
     // Pobierz parametry
     const { searchParams } = new URL(request.url);
-    const slug = searchParams.get('slug');
-    const template = searchParams.get('template');
-    const status = searchParams.get('status') || 'PUBLISHED';
-    
+    const slug = searchParams.get("slug");
+    const template = searchParams.get("template");
+    const status = searchParams.get("status") || "PUBLISHED";
+
     // Buduj query
     const where: any = {
       tenantId: tenant.id,
-      status: status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
+      status: status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
     };
-    
+
     if (slug) {
       where.slug = slug;
     }
-    
+
     if (template) {
       where.template = template;
     }
-    
+
     // Pobierz strony
     const pages = await prisma.page.findMany({
       where,
@@ -81,29 +78,23 @@ export async function GET(request: NextRequest) {
           },
         },
         children: {
-          where: { status: 'PUBLISHED' },
+          where: { status: "PUBLISHED" },
           select: {
             slug: true,
             title: true,
             order: true,
           },
-          orderBy: { order: 'asc' },
+          orderBy: { order: "asc" },
         },
       },
-      orderBy: [
-        { order: 'asc' },
-        { title: 'asc' },
-      ],
+      orderBy: [{ order: "asc" }, { title: "asc" }],
     });
-    
+
     // Jeśli szukano konkretnej strony i nie znaleziono
     if (slug && pages.length === 0) {
-      return NextResponse.json(
-        { error: 'Page not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
-    
+
     // Zwróć dane
     return NextResponse.json({
       tenant: {
@@ -113,11 +104,10 @@ export async function GET(request: NextRequest) {
       },
       pages: slug ? pages[0] : pages,
     });
-    
   } catch (error) {
-    console.error('Public API error:', error);
+    console.error("Public API error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

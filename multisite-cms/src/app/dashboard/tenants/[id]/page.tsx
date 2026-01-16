@@ -1,6 +1,6 @@
 import { getSession, isSuperAdmin, requireTenant } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ExternalLink, Eye, FileText, Pencil, Plus } from "lucide-react";
+import { ExternalLink, Eye, FileText, Newspaper, Pencil, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CopyButton } from "./copy-button";
@@ -29,6 +29,7 @@ export default async function TenantPage({ params }: Props) {
     where: { id },
     include: {
       pages: {
+        where: { template: { not: "news" } }, // Exclude news from pages list
         orderBy: [{ order: "asc" }, { title: "asc" }],
         include: {
           author: {
@@ -36,9 +37,20 @@ export default async function TenantPage({ params }: Props) {
           },
         },
       },
+      users: {
+        select: { id: true },
+      },
       _count: {
         select: { deployments: true },
       },
+    },
+  });
+
+  // Count news separately
+  const newsCount = await prisma.page.count({
+    where: {
+      tenantId: id,
+      template: "news",
     },
   });
 
@@ -55,6 +67,10 @@ export default async function TenantPage({ params }: Props) {
     isSuperAdmin(session) ||
     (session.user.tenantId === id &&
       ["ADMIN", "EDITOR"].includes(session.user.role));
+
+  const canManageUsers =
+    isSuperAdmin(session) ||
+    (session.user.tenantId === id && session.user.role === "ADMIN");
 
   return (
     <div className="max-w-6xl">
@@ -77,6 +93,26 @@ export default async function TenantPage({ params }: Props) {
 
         <div className="flex items-center gap-3">
           <DeployButton tenantId={tenant.id} lastDeployment={lastDeployment} />
+
+          {canEdit && (
+            <Link
+              href={`/dashboard/tenants/${id}/news`}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+            >
+              <Newspaper className="h-4 w-4" />
+              Aktualności ({newsCount})
+            </Link>
+          )}
+
+          {canManageUsers && (
+            <Link
+              href={`/dashboard/tenants/${id}/users`}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <Users className="h-4 w-4" />
+              Użytkownicy ({tenant.users.length})
+            </Link>
+          )}
 
           {canEdit && (
             <Link

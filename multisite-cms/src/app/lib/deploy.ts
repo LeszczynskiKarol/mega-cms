@@ -37,12 +37,14 @@ export interface DeployResult {
 
 /**
  * Triggeruje build i deploy strony klienta.
+ * Wywołuje GitHub Actions przez repository_dispatch event.
  */
 export async function triggerDeploy(
   tenantId: string,
   triggeredBy?: string
 ): Promise<DeployResult> {
   try {
+    // Pobierz tenant
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
     });
@@ -51,6 +53,7 @@ export async function triggerDeploy(
       return { success: false, error: "Tenant not found" };
     }
 
+    // Utwórz rekord deploymentu
     const deployment = await prisma.deployment.create({
       data: {
         tenantId,
@@ -59,6 +62,7 @@ export async function triggerDeploy(
       },
     });
 
+    // Wywołaj GitHub Actions webhook (w tle)
     triggerGitHubActions(tenant.domain, deployment.id, triggeredBy).catch(
       console.error
     );
@@ -71,7 +75,7 @@ export async function triggerDeploy(
 }
 
 /**
- * Wywołuje GitHub Actions przez workflow_dispatch.
+ * Wywołuje GitHub Actions przez repository_dispatch.
  */
 async function triggerGitHubActions(
   domain: string,
@@ -79,12 +83,7 @@ async function triggerGitHubActions(
   triggeredBy?: string
 ): Promise<void> {
   const githubToken = process.env.GITHUB_TOKEN;
-  const githubRepo = process.env.GITHUB_REPO;
-
-  console.log("GitHub config:", {
-    hasToken: !!githubToken,
-    repo: githubRepo,
-  });
+  const githubRepo = process.env.GITHUB_REPO; // format: "owner/repo"
 
   if (!githubToken || !githubRepo) {
     console.log("GitHub not configured, falling back to dev mode");
@@ -93,30 +92,30 @@ async function triggerGitHubActions(
   }
 
   try {
+    // Zaktualizuj status na BUILDING
     await prisma.deployment.update({
       where: { id: deploymentId },
       data: { status: "BUILDING" },
     });
 
-    const url = `https://api.github.com/repos/${githubRepo}/actions/workflows/deploy.yml/dispatches`;
-    console.log("Calling GitHub API:", url);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-        Authorization: `token ${githubToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ref: "main",
-        inputs: {
-          reason: `Deploy triggered by ${triggeredBy || "CMS"} for ${domain}`,
+    // Wywołaj GitHub Actions - workflow_dispatch
+    const response = await fetch(
+      `https://api.github.com/repos/${githubRepo}/actions/workflows/deploy.yml/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          Authorization: `token ${githubToken}`,
+          "Content-Type": "application/json",
         },
-      }),
-    });
-
-    console.log("GitHub API response:", response.status);
+        body: JSON.stringify({
+          ref: "main",
+          inputs: {
+            reason: `Deploy triggered by ${triggeredBy || "CMS"} for ${domain}`,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const text = await response.text();
@@ -125,6 +124,7 @@ async function triggerGitHubActions(
 
     console.log(`GitHub Actions triggered for ${domain}`);
 
+    // Zaktualizuj status (workflow_dispatch nie ma callbacka, więc zakładamy sukces)
     setTimeout(async () => {
       await prisma.deployment.update({
         where: { id: deploymentId },
@@ -148,6 +148,9 @@ async function triggerGitHubActions(
   }
 }
 
+/**
+ * Symuluje deploy w trybie deweloperskim.
+ */
 async function simulateDevDeploy(deploymentId: string): Promise<void> {
   console.log("DEV MODE: Simulating deployment...");
 
@@ -156,6 +159,7 @@ async function simulateDevDeploy(deploymentId: string): Promise<void> {
     data: { status: "BUILDING" },
   });
 
+  // Symulujemy czas budowania (2 sekundy)
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   await prisma.deployment.update({
@@ -172,6 +176,9 @@ async function simulateDevDeploy(deploymentId: string): Promise<void> {
   console.log("DEV MODE: Deployment simulated successfully");
 }
 
+/**
+ * Invaliduje cache CloudFront dla danej domeny.
+ */
 export async function invalidateCache(domain: string): Promise<boolean> {
   const distributionId = process.env.CLOUDFRONT_DISTRIBUTION_ID;
 
@@ -200,6 +207,9 @@ export async function invalidateCache(domain: string): Promise<boolean> {
   }
 }
 
+/**
+ * Callback z CI/CD systemu po zakończeniu buildu.
+ */
 export async function handleBuildCallback(
   deploymentId: string,
   status: "SUCCESS" | "FAILED",
@@ -216,6 +226,10 @@ export async function handleBuildCallback(
     },
   });
 }
+
+// =============================================================================
+// MEDIA UPLOAD
+// =============================================================================
 
 export async function uploadMedia(
   tenantId: string,
