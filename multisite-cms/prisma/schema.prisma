@@ -23,6 +23,7 @@ model Tenant {
   domains     String   @default("[]")  // JSON string zamiast tablicy
   apiKey      String   @unique @default(cuid())
   settings    String   @default("{}")  // JSON string
+  githubRepo String?  
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

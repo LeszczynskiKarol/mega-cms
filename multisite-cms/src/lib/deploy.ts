@@ -59,9 +59,12 @@ export async function triggerDeploy(
       },
     });
 
-    triggerGitHubActions(tenant.domain, deployment.id, triggeredBy).catch(
-      console.error
-    );
+    // Przekaż cały tenant (z githubRepo)
+    triggerGitHubActions(
+      { domain: tenant.domain, githubRepo: tenant.githubRepo },
+      deployment.id,
+      triggeredBy
+    ).catch(console.error);
 
     return { success: true, deploymentId: deployment.id };
   } catch (error) {
@@ -79,7 +82,7 @@ async function triggerGitHubActions(
   triggeredBy?: string
 ): Promise<void> {
   const githubToken = process.env.GITHUB_TOKEN;
-  const githubRepo = process.env.GITHUB_REPO;
+  const githubRepo = tenant.githubRepo;
 
   console.log("GitHub config:", {
     hasToken: !!githubToken,
@@ -87,7 +90,9 @@ async function triggerGitHubActions(
   });
 
   if (!githubToken || !githubRepo) {
-    console.log("GitHub not configured, falling back to dev mode");
+    console.log(
+      "GitHub not configured for this tenant, falling back to dev mode"
+    );
     await simulateDevDeploy(deploymentId);
     return;
   }
