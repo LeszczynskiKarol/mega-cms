@@ -1,6 +1,14 @@
 import { getSession, isSuperAdmin, requireTenant } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ExternalLink, Eye, FileText, Newspaper, Pencil, Plus, Users } from "lucide-react";
+import {
+  ExternalLink,
+  Eye,
+  FileText,
+  Newspaper,
+  Pencil,
+  Plus,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CopyButton } from "./copy-button";
@@ -114,7 +122,7 @@ export default async function TenantPage({ params }: Props) {
             </Link>
           )}
 
-          {canEdit && (
+          {/**{canEdit && (
             <Link
               href={`/dashboard/tenants/${id}/pages/new`}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -122,7 +130,7 @@ export default async function TenantPage({ params }: Props) {
               <Plus className="h-4 w-4" />
               Nowa strona
             </Link>
-          )}
+          )}**/}
         </div>
       </div>
 
@@ -135,7 +143,7 @@ export default async function TenantPage({ params }: Props) {
         <CopyButton text={tenant.apiKey} />
       </div>
 
-      {/* Pages List */}
+      {/* Pages List 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -222,7 +230,7 @@ export default async function TenantPage({ params }: Props) {
             ))}
           </div>
         )}
-      </div>
+      </div>*/}
     </div>
   );
 }
