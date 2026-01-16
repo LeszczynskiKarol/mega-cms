@@ -74,7 +74,7 @@ export function NewsEditor({ tenantId, initialData }: Props) {
     excerpt: initialData?.description || "",
     image: initialData?.content?.image || "",
     html: initialData?.content?.html || "",
-    status: initialData?.status || ("DRAFT" as const),
+    status: initialData?.status || ("PUBLISHED" as const),
     publishedAt: initialData?.publishedAt
       ? new Date(initialData.publishedAt).toISOString().slice(0, 16)
       : new Date().toISOString().slice(0, 16),
